@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - SB</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <h2>SB - Secure Banking</h2>
+    <a href="/logout">Logout</a>
+</div>
+
+<div class="dashboard-container">
+
+    <div class="dashboard-card">
+
+        <h2>Welcome, {{ username }}</h2>
+        <h3>Balance: ₹ {{ balance }}</h3>
+
+        <div class="actions">
+
+            <form method="POST" action="/deposit">
+                <input type="number" name="amount" placeholder="Deposit Amount" required>
+                <button type="submit">Deposit</button>
+            </form>
+
+            <form method="POST" action="/withdraw">
+                <input type="number" name="amount" placeholder="Withdraw Amount" required>
+                <button type="submit">Withdraw</button>
+            </form>
+
+        </div>
+
+        <hr style="margin: 30px 0;">
+
+        <!-- 🔥 Transaction History Section -->
+        <h3>Transaction History</h3>
+
+        <table style="width:100%; margin-top:15px; color:white; text-align:center;">
+            <tr>
+                <th>Type</th>
+                <th>Amount</th>
+            </tr>
+
+            {% for t in transactions %}
+            <tr>
+                <td>{{ t[0] }}</td>
+                <td>₹ {{ t[1] }}</td>
+            </tr>
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+</div>
+
+</body>
+</html>
