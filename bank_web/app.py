@@ -1,20 +1,23 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
+import os
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
+DATABASE = "bank.db"
+
 
 # ---------------- DATABASE INIT ----------------
 def init_db():
-    conn = sqlite3.connect("database/bank.db")
+    conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
         balance REAL DEFAULT 0
     )
     """)
@@ -32,6 +35,10 @@ def init_db():
     conn.close()
 
 
+# Initialize DB when app starts (IMPORTANT FOR RENDER)
+init_db()
+
+
 # ---------------- HOME ----------------
 @app.route("/")
 def home():
@@ -39,12 +46,6 @@ def home():
 
 
 # ---------------- REGISTER ----------------
-import os
-import sqlite3
-from flask import request, render_template, redirect, url_for
-
-import sqlite3
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -52,13 +53,14 @@ def register():
         password = request.form["password"]
 
         try:
-            conn = sqlite3.connect("bank.db")  # use correct path
+            conn = sqlite3.connect(DATABASE)
             cursor = conn.cursor()
 
             cursor.execute(
                 "INSERT INTO users (username, password, balance) VALUES (?, ?, ?)",
                 (username, password, 0)
             )
+
             conn.commit()
             conn.close()
 
@@ -68,9 +70,10 @@ def register():
             return "Username already exists"
 
         except Exception as e:
-            return f"Actual error: {e}"
+            return f"Error: {e}"
 
     return render_template("register.html")
+
 
 # ---------------- LOGIN ----------------
 @app.route("/login", methods=["GET", "POST"])
@@ -79,7 +82,7 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
 
-        conn = sqlite3.connect("database/bank.db")
+        conn = sqlite3.connect(DATABASE)
         cursor = conn.cursor()
 
         cursor.execute(
@@ -106,11 +109,12 @@ def dashboard():
 
     username = session["username"]
 
-    conn = sqlite3.connect("database/bank.db")
+    conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
     cursor.execute("SELECT balance FROM users WHERE username = ?", (username,))
-    balance = cursor.fetchone()[0]
+    result = cursor.fetchone()
+    balance = result[0] if result else 0
 
     cursor.execute("""
         SELECT type, amount
@@ -139,7 +143,7 @@ def deposit():
     amount = float(request.form["amount"])
     username = session["username"]
 
-    conn = sqlite3.connect("database/bank.db")
+    conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
     cursor.execute(
@@ -167,11 +171,12 @@ def withdraw():
     amount = float(request.form["amount"])
     username = session["username"]
 
-    conn = sqlite3.connect("database/bank.db")
+    conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
     cursor.execute("SELECT balance FROM users WHERE username = ?", (username,))
-    balance = cursor.fetchone()[0]
+    result = cursor.fetchone()
+    balance = result[0] if result else 0
 
     if amount > balance:
         conn.close()
@@ -202,5 +207,4 @@ def logout():
 
 # ---------------- MAIN ----------------
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True)
