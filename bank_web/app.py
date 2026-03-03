@@ -43,31 +43,32 @@ import os
 import sqlite3
 from flask import request, render_template, redirect, url_for
 
+import sqlite3
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
 
-        # Get absolute path to project directory
-        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        db_path = os.path.join(BASE_DIR, "bank.db")
-
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-
         try:
+            conn = sqlite3.connect("bank.db")  # use correct path
+            cursor = conn.cursor()
+
             cursor.execute(
                 "INSERT INTO users (username, password, balance) VALUES (?, ?, ?)",
                 (username, password, 0)
             )
             conn.commit()
-        except:
             conn.close()
+
+            return redirect(url_for("login"))
+
+        except sqlite3.IntegrityError:
             return "Username already exists"
 
-        conn.close()
-        return redirect(url_for("login"))
+        except Exception as e:
+            return f"Actual error: {e}"
 
     return render_template("register.html")
 
